@@ -16,6 +16,7 @@
 
 namespace Venus\src\Rest\Controller;
 
+use \Venus\core\Config as Config;
 use \Venus\lib\Entity as LibEntity;
 use \Venus\lib\Response as Response;
 use \Venus\src\Rest\common\Controller as Controller;
@@ -59,15 +60,19 @@ class Rest extends Controller {
 
 	public function get($sEntity, $iId) {
 
-		$sClassNameEntity = '\Venus\src\Helium\Entity\\'.$sEntity;
-		$sClassNameModel = '\Venus\src\Helium\Model\\'.$sEntity;
+	    $oAccessConfig = Config::get('Access');
+	    $oDbConfig = Config::get('Db')->configuration;
+	    $sBundleName = Config::getBundleLocationName('Db');
+	    
+		$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
+		$sClassNameModel = '\Venus\src\\'.$sBundleName.'\Model\\'.$sEntity;
 		
-		if (class_exists($sClassNameEntity)) {
-			
+		if (isset($oAccessConfig->allowed) && in_array($sEntity, $oAccessConfig->allowed, true) && class_exists($sClassNameEntity)) {
+
 			$oClassNameEntity = new $sClassNameEntity;
 			$sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
 			$sMethodName = 'findBy'.$sPrimaryKeyName;
-			
+	
 			$oClassNameModel = new $sClassNameModel;
 			
 			$aResults = $oClassNameModel->$sMethodName($iId);
