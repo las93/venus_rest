@@ -31,7 +31,10 @@ Voici un exemple de configuration Apache :
 &lt;/VirtualHost&gt;
 </pre>
 
-Ne pas oublier d'ajouter votre Listen 83 dans Apache
+Ne pas oublier d'ajouter votre Listen 83 dans Apache.
+
+Vous configurez les autorisations d'accès dans le fichier private/src/Rest/conf/Access.conf.
+Les entités doivent être présentes dans private/src/Rest/conf/Db.conf.
 
 ===================
 Anglais
@@ -59,3 +62,6 @@ Thsi is an exemple to Apache configuration :
 </pre>
 
 Don't forget to add your Listen 83 in Apache.
+
+You setup your access rights in the file private/src/Rest/conf/Access.conf.
+The entities have to present in private/src/Rest/conf/Db.conf.

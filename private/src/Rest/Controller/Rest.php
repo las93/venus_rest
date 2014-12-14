@@ -17,6 +17,7 @@ namespace Venus\src\Rest\Controller;
 
 use \Venus\core\Config as Config;
 use \Venus\lib\Entity as LibEntity;
+use \Venus\lib\Http as Http;
 use \Venus\lib\Response as Response;
 use \Venus\src\Rest\common\Controller as Controller;
 
@@ -33,8 +34,8 @@ use \Venus\src\Rest\common\Controller as Controller;
  * @link      	https://github.com/las93
  * @since     	1.0
  */
-class Rest extends Controller {
-
+class Rest extends Controller
+{    
 	/**
 	 * Constructor
 	 *
@@ -147,9 +148,48 @@ class Rest extends Controller {
 	 * @param  int $iId
 	 * @return void
 	 */
-	public function put($sEntity, $iId = null) 
+	public function put($sEntity, $iId) 
 	{
-		;
+	    $_PUT = Http::getPut();
+	    
+	    if (count($_PUT) > 0) {
+
+    	    $oAccessConfig = Config::get('Access');
+    	    $oDbConfig = Config::get('Db')->configuration;
+    	    $sBundleName = Config::getBundleLocationName('Db');
+    	    
+    		$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
+    		$sClassNameModel = '\Venus\src\\'.$sBundleName.'\Model\\'.$sEntity;
+    		
+    		if (isset($oAccessConfig->allowed) && isset($oAccessConfig->allowed->$sEntity)
+                && in_array('put', $oAccessConfig->allowed->$sEntity, true) && class_exists($sClassNameEntity)) {
+    
+    		    $oClassNameEntity = new $sClassNameEntity;
+    		    $sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
+    		    $sMethodName = 'set_'.$sPrimaryKeyName;
+    		    $oClassNameEntity->$sMethodName($iId);
+    		    
+    		    foreach ($_PUT as $sKey => $sValue) {
+
+    		        $sMethodName = 'set_'.$sKey;
+    		        $oClassNameEntity->$sMethodName($sValue);
+    		    }
+    
+    		    $oClassNameEntity->save();
+    			    
+    		    $bReturn = true;
+    		}
+    		else {
+    			
+    			$bReturn = false;
+    		}
+	    }
+	    else {
+
+	        $bReturn = false;
+	    }
+
+		echo Response::translate($bReturn);
 	}
 
 	/**
