@@ -83,10 +83,14 @@ class Rest extends Controller
 
 			    $aResults = $oClassNameModel->findAll();
 			}
+			
+			if (count($aResults) > 0) { Http::setStatus(200); }
+			else { Http::setStatus(204); }
 		}
 		else {
 			
 			$aResults = array();
+			Http::setStatus(403);
 		}
 
 		echo Response::translate($aResults);
@@ -124,17 +128,20 @@ class Rest extends Controller
 			                     ->remove();
 			    
 			    $bReturn = true;
+			    Http::setStatus(200);
 			}
 			else {
 			    
 			    $oClassNameModel = new $sClassNameModel;
 		        $oClassNameModel->truncate();
 			    $bReturn = true;
+                Http::setStatus(200);
 			}
 		}
 		else {
 			
 			$bReturn = false;
+            Http::setStatus(403);
 		}
 
 		echo Response::translate($bReturn);
@@ -180,15 +187,18 @@ class Rest extends Controller
     		    $oClassNameEntity->save(true);
     			    
     		    $bReturn = true;
+                Http::setStatus(201);
     		}
     		else {
     			
     			$bReturn = false;
+                Http::setStatus(403);
     		}
 	    }
 	    else {
 
 	        $bReturn = false;
+            Http::setStatus(403);
 	    }
 
 		echo Response::translate($bReturn);
@@ -233,8 +243,16 @@ class Rest extends Controller
         
         		    $iUpdate = $oClassNameEntity->save();
         		    
-         		    if ($iUpdate > 0) { $bReturn = true; }
-         		    else { $bReturn = false; }
+         		    if ($iUpdate > 0) { 
+         		        
+         		        $bReturn = true;
+                        Http::setStatus(201);
+         		    }
+         		    else { 
+         		        
+         		        $bReturn = false;
+                        Http::setStatus(403);
+         		    }
     		    }
     		    else {
         		    
@@ -252,16 +270,19 @@ class Rest extends Controller
         		    $oClassNameEntity->save();
 
         		    $bReturn = true;
+                    Http::setStatus(201);
     		    }
     		}
     		else {
     			
     			$bReturn = false;
+                Http::setStatus(403);
     		}
 	    }
 	    else {
 
 	        $bReturn = false;
+            Http::setStatus(403);
 	    }
 
 		echo Response::translate($bReturn);
@@ -269,6 +290,7 @@ class Rest extends Controller
 
 	/**
 	 * The options method for the RestFull Web Service
+	 *   http://localhost:83/user/2 (HTTP OPTIONS) > send the all method allowed for this entity
 	 *
 	 * @access public
 	 * @param  string $sEntity
@@ -277,19 +299,29 @@ class Rest extends Controller
 	 */
 	public function options($sEntity, $iId = null)
 	{
-		;
-	}
+	    $oAccessConfig = Config::get('Access');
+    	$oDbConfig = Config::get('Db')->configuration;
+    	$sBundleName = Config::getBundleLocationName('Db');
+    	    
+    	$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
+	    
+	    if (isset($oAccessConfig->allowed) && isset($oAccessConfig->allowed->$sEntity) && class_exists($sClassNameEntity)) {
+	    
+	        $sAllow = '';
+	        
+	        foreach ($oAccessConfig->allowed->$sEntity as $sOne) {
+	            
+	            if (($iId > 0 && $sOne === 'put') || $sOne !== 'put') {
+	            
+	                $sAllow .= ' '.strtoupper($sOne).',';
+	            }
+	        }
 
-	/**
-	 * The head method for the RestFull Web Service
-	 *
-	 * @access public
-	 * @param  string $sEntity
-	 * @param  int $iId
-	 * @return void
-	 */
-	public function head($sEntity, $iId = null)
-	{
-		;
+	        if (count($oAccessConfig->allowed->$sEntity) > 0) { $sAllow = substr($sAllow, 0, -1); }
+	        
+	    }
+
+	    header("Allow: ".$sAllow);
+	    Http::setStatus(200);
 	}
 }
