@@ -142,6 +142,7 @@ class Rest extends Controller
 
 	/**
 	 * The put method for the RestFull Web Service
+	 *   http://localhost:83/user/2 (HTTP PUT) > to insert one user or update if it exists
 	 *
 	 * @access public
 	 * @param  string $sEntity
@@ -166,16 +167,17 @@ class Rest extends Controller
     
     		    $oClassNameEntity = new $sClassNameEntity;
     		    $sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
-    		    $sMethodName = 'set_'.$sPrimaryKeyName;
-    		    $oClassNameEntity->$sMethodName($iId);
+    		    $sMethodNameNotUsed = 'set_'.$sPrimaryKeyName;
+    		    $oClassNameEntity->$sMethodNameNotUsed($iId);
     		    
     		    foreach ($_PUT as $sKey => $sValue) {
-
+    		        
     		        $sMethodName = 'set_'.$sKey;
-    		        $oClassNameEntity->$sMethodName($sValue);
+
+    		        if ($sMethodNameNotUsed !== $sMethodName) { $oClassNameEntity->$sMethodName($sValue); }
     		    }
     
-    		    $oClassNameEntity->save();
+    		    $oClassNameEntity->save(true);
     			    
     		    $bReturn = true;
     		}
@@ -194,6 +196,8 @@ class Rest extends Controller
 
 	/**
 	 * The post method for the RestFull Web Service
+	 *   http://localhost:83/user/2 (HTTP POST) > to update one user
+	 *   http://localhost:83/user   (HTTP POST) > to insert one user
 	 *
 	 * @access public
 	 * @param  string $sEntity
@@ -202,7 +206,65 @@ class Rest extends Controller
 	 */
 	public function post($sEntity, $iId = null) 
 	{
-		;
+	    if (count($_POST) > 0) {
+
+    	    $oAccessConfig = Config::get('Access');
+    	    $oDbConfig = Config::get('Db')->configuration;
+    	    $sBundleName = Config::getBundleLocationName('Db');
+    	    
+    		$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
+    		$sClassNameModel = '\Venus\src\\'.$sBundleName.'\Model\\'.$sEntity;
+    		
+    		if (isset($oAccessConfig->allowed) && isset($oAccessConfig->allowed->$sEntity)
+                && in_array('put', $oAccessConfig->allowed->$sEntity, true) && class_exists($sClassNameEntity)) {
+    
+    		    if ($iId > 0) {
+        		    
+        		    $oClassNameEntity = new $sClassNameEntity;
+        		    $sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
+        		    $sMethodName = 'set_'.$sPrimaryKeyName;
+        		    $oClassNameEntity->$sMethodName($iId);
+        		    
+        		    foreach ($_POST as $sKey => $sValue) {
+    
+        		        $sMethodName = 'set_'.$sKey;
+        		        $oClassNameEntity->$sMethodName($sValue);
+        		    }
+        
+        		    $iUpdate = $oClassNameEntity->save();
+        		    
+         		    if ($iUpdate > 0) { $bReturn = true; }
+         		    else { $bReturn = false; }
+    		    }
+    		    else {
+        		    
+        		    $oClassNameEntity = new $sClassNameEntity;
+        		    $sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
+        		    $sMethodNameNotUsed = 'set_'.$sPrimaryKeyName;
+        		    
+        		    foreach ($_POST as $sKey => $sValue) {
+
+        		        $sMethodName = 'set_'.$sKey;
+        		        
+        		        if ($sMethodNameNotUsed !== $sMethodName) { $oClassNameEntity->$sMethodName($sValue); }
+        		    }
+        
+        		    $oClassNameEntity->save();
+
+        		    $bReturn = true;
+    		    }
+    		}
+    		else {
+    			
+    			$bReturn = false;
+    		}
+	    }
+	    else {
+
+	        $bReturn = false;
+	    }
+
+		echo Response::translate($bReturn);
 	}
 
 	/**
