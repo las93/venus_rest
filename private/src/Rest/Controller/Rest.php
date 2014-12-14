@@ -7,13 +7,12 @@
  * @package   	src\Rest\Controller
  * @author    	Judicaël Paquet <judicael.paquet@gmail.com>
  * @copyright 	Copyright (c) 2013-2014 PAQUET Judicaël FR Inc. (https://github.com/las93)
- * @license   	https://github.com/las93/venus/blob/master/LICENSE.md Tout droit réservé à PAQUET Judicaël
+ * @license   	https://github.com/las93/venus_rest/blob/master/LICENSE.md Tout droit réservé à PAQUET Judicaël
  * @version   	Release: 1.0.0
- * @filesource	https://github.com/las93/venus
+ * @filesource	https://github.com/las93/venus_rest
  * @link      	https://github.com/las93
  * @since     	1.0
  */
-
 namespace Venus\src\Rest\Controller;
 
 use \Venus\core\Config as Config;
@@ -28,13 +27,12 @@ use \Venus\src\Rest\common\Controller as Controller;
  * @package   	src\Rest\Controller
  * @author    	Judicaël Paquet <judicael.paquet@gmail.com>
  * @copyright 	Copyright (c) 2013-2014 PAQUET Judicaël FR Inc. (https://github.com/las93)
- * @license   	https://github.com/las93/venus/blob/master/LICENSE.md Tout droit réservé à PAQUET Judicaël
+ * @license   	https://github.com/las93/venus_rest/blob/master/LICENSE.md Tout droit réservé à PAQUET Judicaël
  * @version   	Release: 1.0.0
- * @filesource	https://github.com/las93/venus
+ * @filesource	https://github.com/las93/venus_rest
  * @link      	https://github.com/las93
  * @since     	1.0
  */
-
 class Rest extends Controller {
 
 	/**
@@ -43,39 +41,47 @@ class Rest extends Controller {
 	 * @access public
 	 * @return object
 	 */
-
-	public function __construct() {
-
+	public function __construct() 
+	{
 		parent::__construct();
 	}
 
 	/**
 	 * The get method for the RestFull Web Service
+	 *   http://localhost:83/user/2 (HTTP GET) > to select one user
+	 *   http://localhost:83/user   (HTTP GET) > to select all user
 	 *
 	 * @access public
 	 * @param  string $sEntity
 	 * @param  int $iId
 	 * @return void
 	 */
-
-	public function get($sEntity, $iId) {
-
+	public function get($sEntity, $iId = 0) 
+	{
 	    $oAccessConfig = Config::get('Access');
 	    $oDbConfig = Config::get('Db')->configuration;
 	    $sBundleName = Config::getBundleLocationName('Db');
 	    
 		$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
 		$sClassNameModel = '\Venus\src\\'.$sBundleName.'\Model\\'.$sEntity;
-		
-		if (isset($oAccessConfig->allowed) && in_array($sEntity, $oAccessConfig->allowed, true) && class_exists($sClassNameEntity)) {
 
+		if (isset($oAccessConfig->allowed) && isset($oAccessConfig->allowed->$sEntity)
+            && in_array('select', $oAccessConfig->allowed->$sEntity, true) && class_exists($sClassNameEntity)) {
+   
 			$oClassNameEntity = new $sClassNameEntity;
 			$sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
 			$sMethodName = 'findBy'.$sPrimaryKeyName;
 	
 			$oClassNameModel = new $sClassNameModel;
 			
-			$aResults = $oClassNameModel->$sMethodName($iId);
+			if ($iId > 0) {
+			
+			    $aResults = $oClassNameModel->$sMethodName($iId);
+			}
+			else {
+
+			    $aResults = $oClassNameModel->findAll();
+			}
 		}
 		else {
 			
@@ -87,16 +93,50 @@ class Rest extends Controller {
 
 	/**
 	 * The delete method for the RestFull Web Service
+	 *   http://localhost:83/user/2 (HTTP DELETE) > to delete one user
+	 *   http://localhost:83/user   (HTTP DELETE) > to truncate table
 	 *
 	 * @access public
 	 * @param  string $sEntity
 	 * @param  int $iId
 	 * @return void
 	 */
+	public function delete($sEntity, $iId = null) 
+	{
+	    $oAccessConfig = Config::get('Access');
+	    $oDbConfig = Config::get('Db')->configuration;
+	    $sBundleName = Config::getBundleLocationName('Db');
+	    
+		$sClassNameEntity = '\Venus\src\\'.$sBundleName.'\Entity\\'.$sEntity;
+		$sClassNameModel = '\Venus\src\\'.$sBundleName.'\Model\\'.$sEntity;
+		
+		if (isset($oAccessConfig->allowed) && isset($oAccessConfig->allowed->$sEntity)
+            && in_array('delete', $oAccessConfig->allowed->$sEntity, true) && class_exists($sClassNameEntity)) {
+			
+			if ($iId > 0) {
 
-	public function delete($sEntity, $iId = null) {
+			    $oClassNameEntity = new $sClassNameEntity;
+			    $sPrimaryKeyName = LibEntity::getPrimaryKeyName($oClassNameEntity);
+			    $sMethodName = 'set_'.$sPrimaryKeyName;
 
-		;
+			    $oClassNameEntity->$sMethodName($iId)
+			                     ->remove();
+			    
+			    $bReturn = true;
+			}
+			else {
+			    
+			    $oClassNameModel = new $sClassNameModel;
+		        $oClassNameModel->truncate();
+			    $bReturn = true;
+			}
+		}
+		else {
+			
+			$bReturn = false;
+		}
+
+		echo Response::translate($bReturn);
 	}
 
 	/**
@@ -107,9 +147,8 @@ class Rest extends Controller {
 	 * @param  int $iId
 	 * @return void
 	 */
-
-	public function put($sEntity, $iId = null) {
-
+	public function put($sEntity, $iId = null) 
+	{
 		;
 	}
 
@@ -121,9 +160,8 @@ class Rest extends Controller {
 	 * @param  int $iId
 	 * @return void
 	 */
-
-	public function post($sEntity, $iId = null) {
-
+	public function post($sEntity, $iId = null) 
+	{
 		;
 	}
 
@@ -135,9 +173,8 @@ class Rest extends Controller {
 	 * @param  int $iId
 	 * @return void
 	 */
-
-	public function options($sEntity, $iId = null) {
-
+	public function options($sEntity, $iId = null)
+	{
 		;
 	}
 
@@ -149,9 +186,8 @@ class Rest extends Controller {
 	 * @param  int $iId
 	 * @return void
 	 */
-
-	public function head($sEntity, $iId = null) {
-
+	public function head($sEntity, $iId = null)
+	{
 		;
 	}
 }
