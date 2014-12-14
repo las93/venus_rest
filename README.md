@@ -1,7 +1,7 @@
 BUNDLE RESTFUL FOR VENUS FRAMEWORK
 ====================
 
-Bundle Restful for Venus Framework PHP
+Bundle Restful for Venus Framework PHP (minimum version 1.0.1)
 
 Contact judicael.paquet@gmail.com pour participer au projet ou avoir plus d'information
 Contact judicael.paquet@gmail.com to participate at the project or to have more informations
